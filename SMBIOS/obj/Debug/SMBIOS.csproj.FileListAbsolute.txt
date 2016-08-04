@@ -1,0 +1,9 @@
+C:\Users\asapozhnikov\Documents\GitHubVisualStudio\SMBIOS\SMBIOS\bin\Debug\SMBIOS.exe.config
+C:\Users\asapozhnikov\Documents\GitHubVisualStudio\SMBIOS\SMBIOS\bin\Debug\SMBIOS.exe
+C:\Users\asapozhnikov\Documents\GitHubVisualStudio\SMBIOS\SMBIOS\bin\Debug\SMBIOS.pdb
+C:\Users\asapozhnikov\Documents\GitHubVisualStudio\SMBIOS\SMBIOS\obj\Debug\SMBIOS.exe
+C:\Users\asapozhnikov\Documents\GitHubVisualStudio\SMBIOS\SMBIOS\obj\Debug\SMBIOS.pdb
+C:\Users\asapozhnikov\Documents\GitHubVisualStudio\SMBIOS\SMBIOS\obj\Debug\SMBIOS.csprojResolveAssemblyReference.cache
+C:\Users\asapozhnikov\Source\Repos\SMBIOS\SMBIOS\bin\Debug\SMBIOS.exe.config
+C:\Users\asapozhnikov\Source\Repos\SMBIOS\SMBIOS\obj\Debug\SMBIOS.exe
+C:\Users\asapozhnikov\Source\Repos\SMBIOS\SMBIOS\obj\Debug\SMBIOS.pdb

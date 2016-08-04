@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SMBIOS
 {
@@ -10,6 +6,12 @@ namespace SMBIOS
     {
         static void Main(string[] args)
         {
+            SMBIOSdata smbios = new SMBIOSdata();
+            
+            smbios.GetRawData();
+            //SMBIOStable tb = smbios.GetNextTable(null, true, 0, 0);
+            smbios.GetTables();
+            smbios.ParseTable(smbios.p_oSMBIOStables[0]);
         }
     }
 }
