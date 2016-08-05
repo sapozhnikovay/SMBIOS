@@ -8,10 +8,14 @@ namespace SMBIOS
         {
             SMBIOSdata smbios = new SMBIOSdata();
             
-            smbios.GetRawData();
+            smbios.GetRawData("hyper-v-2");
             //SMBIOStable tb = smbios.GetNextTable(null, true, 0, 0);
             smbios.GetTables();
-            smbios.ParseTable(smbios.p_oSMBIOStables[0]);
+            smbios.ParseTable(smbios.p_oSMBIOStables[43]);
+            foreach(SMBIOStable table in smbios.p_oSMBIOStables)
+            {
+                smbios.ParseTable(table);
+            }
         }
     }
 }

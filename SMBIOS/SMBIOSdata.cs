@@ -69,18 +69,31 @@ namespace SMBIOS
                 if (p_oTable.p_bUnformattedSection.Length > 0) p_oTable.p_sStrings = Encoding.ASCII.GetString(p_oTable.p_bUnformattedSection).Split('\0');
                 p_oSMBIOStables.Add(p_oTable);
             }
+            Console.WriteLine("SMBIOS " + m_byMajorVersion + "." + m_byMinorVersion + " present.");
+            Console.WriteLine(p_oSMBIOStables.Count + " structures occupying " + m_dwLen + " bytes.");
         }
 
         public void ParseTable(SMBIOStable table)
         {
-            Console.WriteLine("SMBIOS "+ m_byMajorVersion + "." + m_byMinorVersion + " present.");
-            Console.WriteLine(p_oSMBIOStables.Count + " structures occupying " + m_dwLen + " bytes.");
             Console.WriteLine("\nHandle " + table.m_wHandle + ", DMI type " + table.m_bTableType + ", " + table.m_bFormattedSectionLength + " bytes");
             switch (table.m_bTableType)
             {
                 case 0: //BIOS
+                    Console.WriteLine("BIOS information");
+                    Console.WriteLine("\tVendor: " + table.p_sStrings[table.p_bFormattedSection[4] - 1]);
+                    Console.WriteLine("\tBIOS Version: " + table.p_sStrings[table.p_bFormattedSection[5] - 1]);
+                    Console.WriteLine("\tBIOS Release date: " + table.p_sStrings[table.p_bFormattedSection[8] - 1]);
                     break;
-                case 1: //System
+                case 1: //System information
+                    Console.WriteLine("System information");
+                    Console.WriteLine("\tManufacturer: " + table.p_sStrings[table.p_bFormattedSection[4] - 1]);
+                    Console.WriteLine("\tProduct Name: " + table.p_sStrings[table.p_bFormattedSection[5] - 1]);
+                    Console.WriteLine("\tVersion: " + (table.p_bFormattedSection[6] != 0 ? table.p_sStrings[table.p_bFormattedSection[6] - 1] : ""));
+                    Console.WriteLine("\tSerial Number: " + table.p_sStrings[table.p_bFormattedSection[7] - 1]);
+                    Console.WriteLine("\tUUID: " + dmi_system_uuid(new ArraySegment<byte>(table.p_bFormattedSection,8,16).ToArray(), (ushort)(m_byMajorVersion + (m_byMinorVersion << 8))));
+                    Console.WriteLine("\tWake-up type: " + dmi_system_wake_up_type(table.p_bFormattedSection[24]));
+                    Console.WriteLine("\tSKU Number: " + (table.p_bFormattedSection[25] != 0 ? table.p_sStrings[table.p_bFormattedSection[25] - 1] : ""));
+                    Console.WriteLine("\tFamily: " + (table.p_bFormattedSection[26] != 0 ? table.p_sStrings[table.p_bFormattedSection[26] - 1] : ""));
                     break;
                 case 4: //Processor
                     Console.WriteLine("Procesor information");
@@ -97,9 +110,30 @@ namespace SMBIOS
                     Console.WriteLine("\tSlot Data Bus Width: " + dmi_slot_bus_width(table.p_bFormattedSection[6]));
                     Console.WriteLine("\tCurrent usage: " + dmi_slot_usage(table.p_bFormattedSection[7]));
                     Console.WriteLine("\tSlot length: " + dmi_slot_length(table.p_bFormattedSection[8]));
-                    //Console.WriteLine("\tSlot ID: ");
+                    Console.WriteLine("\tSlot ID: " + dmi_slot_id(table.p_bFormattedSection[9], table.p_bFormattedSection[10], table.p_bFormattedSection[5]));
                     Console.WriteLine("\tSlot Characteristics: " + dmi_slot_characteristics(table.p_bFormattedSection[11], table.p_bFormattedSection[12]));
-                    Console.WriteLine("\tBus Address: " + table.p_bFormattedSection[13] + ":" + table.p_bFormattedSection[15] + ":" + table.p_bFormattedSection[16]);
+                    //Console.WriteLine("\tBus Address: " + table.p_bFormattedSection[13] + ":" + table.p_bFormattedSection[15] + ":" + table.p_bFormattedSection[16]);
+                    if (table.m_bFormattedSectionLength < 0x11) break;
+                    Console.WriteLine("\tBus Address: " + dmi_slot_segment_bus_func((ushort)(table.p_bFormattedSection[13] + (table.p_bFormattedSection[14] << 8)), table.p_bFormattedSection[15], table.p_bFormattedSection[16]));
+                    break;
+                case 10: //On Board Devices Information
+                    Console.WriteLine("Onboard device information");
+                    break;
+                case 12: //System Configuration Options (Type 12)
+                    Console.WriteLine("System Configuration Options");
+                    Console.WriteLine(dmi_system_configuration_options(table.p_bFormattedSection[4], table.p_sStrings));
+                    break;
+                case 13: //BIOS Language information
+                    Console.WriteLine("BIOS Language information");
+                    Console.WriteLine("\tAvailable Languages: " + dmi_bios_languages(table.p_bFormattedSection[4], table.p_sStrings));
+                    Console.WriteLine("\tLanguage format: " + dmi_bios_language_format(table.p_bFormattedSection[5]));
+                    Console.WriteLine("\tCurrent Language: " + table.p_sStrings[table.p_bFormattedSection[21] - 1]);
+                    break;
+                case 21: //Built-in Pointing Device (Type 21)
+                    Console.WriteLine("Built-in Pointing Device");
+                    Console.WriteLine("\tType: " + dmi_pointing_device_type(table.p_bFormattedSection[4]));
+                    Console.WriteLine("\tInterface: " + dmi_pointing_device_interface(table.p_bFormattedSection[5]));
+                    Console.WriteLine("\tButtons: " + table.p_bFormattedSection[6]);
                     break;
                 default:
                     Console.WriteLine("Unsupported table type.");
@@ -211,8 +245,9 @@ namespace SMBIOS
         private string dmi_slot_type(byte code)
         {
             string[] type =
-            {   "Other",
-                "Unknown",
+            {
+                "Other", /* 0x01 */
+		        "Unknown",
                 "ISA",
                 "MCA",
                 "EISA",
@@ -229,20 +264,11 @@ namespace SMBIOS
                 "AGP 2x",
                 "AGP 4x",
                 "PCI-X",
-                "AGP 8x",
-                "M.2 Socket 1-DP (Mechanical Key A)",
-                "M.2 Socket 1-SD (Mechanical Key E)",
-                "M.2 Socket 2 (Mechanical Key B)",
-                "M.2 Socket 3 (Mechanical Key M)",
-                "MXM Type I",
-                "MXM Type II",
-                "MXM Type III (standard connector)",
-                "MXM Type III (HE connector)",
-                "MXM Type IV",
-                "MXM 3.0 Type A",
-                "MXM 3.0 Type B",
-                "PCI Express Gen 2 SFF-8639",
-                "PCI Express Gen 3 SFF-8639",
+                "AGP 8x" /* 0x13 */
+            };
+
+            string[] type_0xA0 =
+            {
                 "PC-98/C20", /* 0xA0 */
 		        "PC-98/C24",
                 "PC-98/E",
@@ -267,7 +293,12 @@ namespace SMBIOS
                 "PCI Express 3 x8",
                 "PCI Express 3 x16" /* 0xB6 */
             };
-            return type[code-1];
+
+            if (code >= 0x01 && code <= 0x13)
+                return type[code - 0x01];
+            if (code >= 0xA0 && code <= 0xB6)
+                return type_0xA0[code - 0xA0];
+            return OUT_OF_SPEC;
         }
 
         private string dmi_slot_bus_width(byte code)
@@ -337,5 +368,225 @@ namespace SMBIOS
 
             return result;
         }
+
+        private string dmi_slot_id(byte code1, byte code2, byte type)
+        {
+            /* 7.10.5 */
+            string result = "";
+            switch (type)
+            {
+                case 0x04: /* MCA */
+                    result += "\tID: " + code1 + "\n";
+                    break;
+                case 0x05: /* EISA */
+                    result += "\tID: " + code1 + "\n";
+                    break;
+                case 0x06: /* PCI */
+                case 0x0E: /* PCI */
+                case 0x0F: /* AGP */
+                case 0x10: /* AGP */
+                case 0x11: /* AGP */
+                case 0x12: /* PCI-X */
+                case 0x13: /* AGP */
+                case 0xA5: /* PCI Express */
+                case 0xA6: /* PCI Express */
+                case 0xA7: /* PCI Express */
+                case 0xA8: /* PCI Express */
+                case 0xA9: /* PCI Express */
+                case 0xAA: /* PCI Express */
+                case 0xAB: /* PCI Express 2 */
+                case 0xAC: /* PCI Express 2 */
+                case 0xAD: /* PCI Express 2 */
+                case 0xAE: /* PCI Express 2 */
+                case 0xAF: /* PCI Express 2 */
+                case 0xB0: /* PCI Express 2 */
+                case 0xB1: /* PCI Express 3 */
+                case 0xB2: /* PCI Express 3 */
+                case 0xB3: /* PCI Express 3 */
+                case 0xB4: /* PCI Express 3 */
+                case 0xB5: /* PCI Express 3 */
+                case 0xB6: /* PCI Express 3 */
+                    result += "\tID: " + code1 + "\n";
+                    break;
+                case 0x07: /* PCMCIA */
+                    result += "\tID: Adapter " + code1 + ", Socket " + code2 + "\n";
+                    break;
+            }
+            return result;
+        }
+
+        private string dmi_slot_segment_bus_func(ushort code1, byte code2, byte code3)
+        {
+            /* 7.10.8 */
+            string result = "";
+            if (!(code1 == 0xFFFF && code2 == 0xFF && code3 == 0xFF))
+                result += string.Format("{0:x04}:{1:x02}:{2:x02}.{3:x}\n",
+                       code1, code2, code3 >> 3, code3 & 0x7);
+            return result;
+        }
+
+        private string dmi_system_wake_up_type(byte code)
+        {
+            string[] type =
+            {
+                "Reserved", /* 0x00 */
+		        "Other",
+                "Unknown",
+                "APM Timer",
+                "Modem Ring",
+                "LAN Remote",
+                "Power Switch",
+                "PCI PME#",
+                "AC Power Restored" /* 0x08 */
+            };
+            return type[code - 1];
+        }
+
+        private string dmi_system_uuid(byte[] p, ushort ver) {
+            bool only0xFF = true, only0x00 = true;
+            int i;
+            string result = "";
+
+            for (i = 0; i < 16 && (only0x00 || only0xFF); i++)
+            {
+                if (p[i] != 0x00) only0x00 = false;
+                if (p[i] != 0xFF) only0xFF = false;
+            }
+
+            if (only0xFF)
+            {
+                result+="Not Present";
+                return result;
+            }
+            if (only0x00)
+            {
+                result+="Not Settable";
+                return result;
+            }
+
+            if (ver >= 0x0206)
+                result += string.Format("{0:X02}{1:X02}{2:X02}{3:X02}-{4:X02}{5:X02}-{6:X02}{7:X02}-{8:X02}{9:X02}-{10:X02}{11:X02}{12:X02}{13:X02}{14:X02}{15:X02}",
+                    p[3], p[2], p[1], p[0], p[5], p[4], p[7], p[6],
+                    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+            else
+                result += string.Format("{0:X02}{1:X02}{2:X02}{3:X02}-{4:X02}{5:X02}-{6:X02}{7:X02}-{8:X02}{9:X02}-{10:X02}{11:X02}{12:X02}{13:X02}{14:X02}{15:X02}",
+                    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+                    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+
+            return result;
+        }
+
+        /*
+        * 7.14 BIOS Language Information (Type 13)
+        */
+        private string dmi_bios_language_format(byte code)
+        {
+            if (code == 0x01)
+                return "Abbreviated";
+            else
+                return "Long";
+        }
+
+        private string dmi_bios_languages(byte count, string[] strings)
+        {
+            string result = "";
+
+            for(var i = 0; i < count; i++)
+            {
+                result += "\t" + strings[i];
+                if (i > 0) result += "\n";
+            }
+
+            return result;
+        }
+
+        /*
+        * 7.13 System Configuration Options (Type 12)
+        */
+        private string dmi_system_configuration_options(byte count, string[] strings)
+        {
+            string result = "";
+
+            for (var i = 0; i < count; i++)
+            {
+                result += "\tOption " + i + ": " + strings[i];
+                if (count > 1) result += "\n";
+            }
+
+            return result;
+        }
+
+        /*
+        * Built-in Pointing Device (Type 21)
+        */
+        private string dmi_pointing_device_type(byte code)
+        {
+            string[] type =
+            {
+                "Other", /* 0x01 */
+		        "Unknown",
+                "Mouse",
+                "Track Ball",
+                "Track Point",
+                "Glide Point",
+                "Touch Pad",
+                "Touch Screen",
+                "Optical Sensor" /* 0x09 */
+            };
+            if (code >= 0x01 && code <= 0x09)
+                return type[code - 0x01];
+            return OUT_OF_SPEC;
+        }
+
+        private string dmi_pointing_device_interface(byte code)
+        {
+            string[] interface0x00 =
+            {
+                "Other", /* 0x01 */
+		        "Unknown",
+                "Serial",
+                "PS/2",
+                "Infrared",
+                "HIP-HIL",
+                "Bus Mouse",
+                "ADB (Apple Desktop Bus)" /* 0x08 */
+            };
+            string[] interface0xA0 =
+            {
+                "Bus Mouse DB-9", /* 0xA0 */
+		        "Bus Mouse Micro DIN",
+                "USB" /* 0xA2 */
+            };
+            if (code >= 0x01 && code <= 0x08)
+                return interface0x00[code - 0x01];
+	        if (code >= 0xA0 && code <= 0xA2)
+		        return interface0xA0[code - 0xA0];
+	        return OUT_OF_SPEC;
+        }
+
+        /*
+        * 7.11 On Board Devices Information (Type 10)
+        */
+        private string dmi_on_board_devices_type(byte code)
+        {
+            string[] type =
+            {
+                "Other", /* 0x01 */
+		        "Unknown",
+                "Video",
+                "SCSI Controller",
+                "Ethernet",
+                "Token Ring",
+                "Sound",
+                "PATA Controller",
+                "SATA Controller",
+                "SAS Controller" /* 0x0A */
+            };
+            if (code >= 0x01 && code <= 0x0A)
+                return type[code - 0x01];
+            return OUT_OF_SPEC;
+        }
+
+
     }
 }
