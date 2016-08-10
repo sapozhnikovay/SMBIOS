@@ -118,6 +118,7 @@ namespace SMBIOS
                     break;
                 case 10: //On Board Devices Information
                     Console.WriteLine("Onboard device information");
+                    Console.WriteLine(dmi_on_board_devices(new ArraySegment<byte>(table.p_bFormattedSection, 4, table.p_bFormattedSection.Length-4).ToArray(), Convert.ToByte((table.p_bFormattedSection.Length - 4) / 2), table.p_sStrings));
                     break;
                 case 12: //System Configuration Options (Type 12)
                     Console.WriteLine("System Configuration Options");
@@ -134,6 +135,13 @@ namespace SMBIOS
                     Console.WriteLine("\tType: " + dmi_pointing_device_type(table.p_bFormattedSection[4]));
                     Console.WriteLine("\tInterface: " + dmi_pointing_device_interface(table.p_bFormattedSection[5]));
                     Console.WriteLine("\tButtons: " + table.p_bFormattedSection[6]);
+                    break;
+                case 24: //Hardware security (type 24)
+                    Console.WriteLine("Hardware Security");
+                    Console.WriteLine("\tPower-On Password Status: " + dmi_hardware_security_status((byte)(table.p_bFormattedSection[4] >> 6)));
+                    Console.WriteLine("\tKeyboard Password Status: " + dmi_hardware_security_status((byte)((table.p_bFormattedSection[4] >> 4) & 0x03)));
+                    Console.WriteLine("\tAdministrator Password Status: " + dmi_hardware_security_status((byte)((table.p_bFormattedSection[4] >> 2) & 0x03)));
+                    Console.WriteLine("\tFront Panel Reset Status: " + dmi_hardware_security_status((byte)(table.p_bFormattedSection[4] & 0x03)));
                     break;
                 default:
                     Console.WriteLine("Unsupported table type.");
@@ -587,6 +595,38 @@ namespace SMBIOS
             return OUT_OF_SPEC;
         }
 
+        private string dmi_on_board_devices(byte[] p, byte count, string[] strings)
+        {
+            string result = "";
+            int i;
 
+            for (i = 0; i < count; i++)
+            {
+                if (count == 1)
+                    result += string.Format("On Board Device Information\n");
+                else
+                    result += string.Format("\tOn Board Device %d Information\n", i + 1);
+                result += string.Format("\t\tType: {0:s}\n", dmi_on_board_devices_type(Convert.ToByte(p[2 * i] & 0x7F)));
+                result += string.Format("\t\tStatus: {0:s}\n", Convert.ToBoolean(p[2 * i] & 0x80) ? "Enabled" : "Disabled");
+                var u = p[2 * i + 1] - 1;
+                result += string.Format("\t\tDescription: {0:s}\n", strings[p[2 * i + 1] - 1]);
+            }
+            return result;
+        }
+
+        /*
+        * 7.26 System Power Controls (Type 25)
+        */
+        private string dmi_hardware_security_status(byte code)
+        {
+            string[] status =
+            {
+                "Disabled", /* 0x00 */
+		        "Enabled",
+                "Not Implemented",
+                "Unknown" /* 0x03 */
+            };
+            return status[code];
+        }
     }
 }
