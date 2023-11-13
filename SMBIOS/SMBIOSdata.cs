@@ -15,7 +15,8 @@ namespace SMBIOS
         public List<SMBIOStable> p_oSMBIOStables;
         private const string OUT_OF_SPEC = "<OUT OF SPEC>";
 
-        public SMBIOSdata() {
+        public SMBIOSdata()
+        {
             m_pbBIOSData = new byte[] { };
             p_oSMBIOStables = new List<SMBIOStable>();
         }
@@ -43,7 +44,7 @@ namespace SMBIOS
             }
         }
 
-                
+
         public void GetTables()
         {
             int i = 0;
@@ -56,7 +57,7 @@ namespace SMBIOS
 
                 int wUnformattedSectionStart = i + p_oTable.m_bFormattedSectionLength;
                 p_oTable.p_bFormattedSection = m_pbBIOSData.Skip(i).Take(p_oTable.m_bFormattedSectionLength).ToArray();
-                
+
                 for(int j = i + p_oTable.m_bFormattedSectionLength; ;j++)
                 {
                     if((m_pbBIOSData[j] == 0) && (m_pbBIOSData[j+1] == 0))
@@ -95,6 +96,16 @@ namespace SMBIOS
                     Console.WriteLine("\tSKU Number: " + (table.p_bFormattedSection[25] != 0 ? table.p_sStrings[table.p_bFormattedSection[25] - 1] : ""));
                     Console.WriteLine("\tFamily: " + (table.p_bFormattedSection[26] != 0 ? table.p_sStrings[table.p_bFormattedSection[26] - 1] : ""));
                     break;
+                case 2: //Motherboard information
+                    Console.WriteLine("Motherboard information");
+                    Console.WriteLine("\tManufacturer: " + table.p_sStrings[table.p_bFormattedSection[4] - 1]);
+                    Console.WriteLine("\tProduct Name: " + table.p_sStrings[table.p_bFormattedSection[5] - 1]);
+                    Console.WriteLine("\tVersion: " + table.p_sStrings[table.p_bFormattedSection[6] - 1]);
+                    Console.WriteLine("\tSerialNumber: " + table.p_sStrings[table.p_bFormattedSection[7] - 1]);
+                    Console.WriteLine("\tAssetTag: " + table.p_bFormattedSection[table.p_bFormattedSection[8] - 1]);
+                    Console.WriteLine("\tFeatureFlags: " + table.p_bFormattedSection[table.p_bFormattedSection[9] - 1]);
+                    Console.WriteLine("\tLocationInChassis: " + table.p_sStrings[table.p_bFormattedSection[10] - 1]);
+                    break;
                 case 4: //Processor
                     Console.WriteLine("Procesor information");
                     Console.WriteLine("\tSocket Designation: " + table.p_sStrings[table.p_bFormattedSection[4]-1]);
@@ -106,7 +117,7 @@ namespace SMBIOS
                 case 9: //System slot
                     Console.WriteLine("System slot information");
                     Console.WriteLine("\tSlot designation: " + table.p_sStrings[table.p_bFormattedSection[4]-1]);
-                    Console.WriteLine("\tSlot type: " +dmi_slot_type(table.p_bFormattedSection[5]));
+                    Console.WriteLine("\tSlot type: " + dmi_slot_type(table.p_bFormattedSection[5]));
                     Console.WriteLine("\tSlot Data Bus Width: " + dmi_slot_bus_width(table.p_bFormattedSection[6]));
                     Console.WriteLine("\tCurrent usage: " + dmi_slot_usage(table.p_bFormattedSection[7]));
                     Console.WriteLine("\tSlot length: " + dmi_slot_length(table.p_bFormattedSection[8]));
@@ -152,7 +163,7 @@ namespace SMBIOS
         private string dmi_processor_type(byte code)
         {
             string[] type = {   "Other", /* 0x01 */
-		                        "Unknown",
+                                "Unknown",
                                 "Central Processor",
                                 "Math Processor",
                                 "DSP Processor",
@@ -173,9 +184,9 @@ namespace SMBIOS
             /* 7.5.4 */
             string[] voltage = {
                 "5.0 V", /* 0 */
-		        "3.3 V",
+                "3.3 V",
                 "2.9 V" /* 2 */
-	        };
+            };
             int i;
             string result = "";
 
@@ -196,7 +207,7 @@ namespace SMBIOS
         {
             string[] upgrade = {
                 "Other", /* 0x01 */
-		        "Unknown",
+                "Unknown",
                 "Daughter Board",
                 "ZIF Socket",
                 "Replaceable Piggy Back",
@@ -255,7 +266,7 @@ namespace SMBIOS
             string[] type =
             {
                 "Other", /* 0x01 */
-		        "Unknown",
+                "Unknown",
                 "ISA",
                 "MCA",
                 "EISA",
@@ -278,7 +289,7 @@ namespace SMBIOS
             string[] type_0xA0 =
             {
                 "PC-98/C20", /* 0xA0 */
-		        "PC-98/C24",
+                "PC-98/C24",
                 "PC-98/E",
                 "PC-98/Local Bus",
                 "PC-98/Card",
@@ -314,8 +325,8 @@ namespace SMBIOS
             string[] width =
             {
                 "Other", /* 0x01, "Other" */
-		        "Unknown", /* "Unknown" */
-		        "8-bit ",
+                "Unknown", /* "Unknown" */
+                "8-bit ",
                 "16-bit ",
                 "32-bit ",
                 "64-bit ",
@@ -336,8 +347,8 @@ namespace SMBIOS
             string[] length =
             {
                 "Other", /* 0x01, "Other" */
-		        "Unknown", /* "Unknown" */
-		        "Short Length ",
+                "Unknown", /* "Unknown" */
+                "Short Length ",
                 "Long Length ",
                 "2.5\" drive form factor ",
                 "3.5\" drive form factor "
@@ -350,8 +361,8 @@ namespace SMBIOS
             string[] usage =
             {
                 "Other", /* 0x01, "Other" */
-		        "Unknown", /* "Unknown" */
-		        "Available ",
+                "Unknown", /* "Unknown" */
+                "Available ",
                 "In use "
             };
             return usage[code - 1];
@@ -438,7 +449,7 @@ namespace SMBIOS
             string[] type =
             {
                 "Reserved", /* 0x00 */
-		        "Other",
+                "Other",
                 "Unknown",
                 "APM Timer",
                 "Modem Ring",
@@ -450,7 +461,8 @@ namespace SMBIOS
             return type[code - 1];
         }
 
-        private string dmi_system_uuid(byte[] p, ushort ver) {
+        private string dmi_system_uuid(byte[] p, ushort ver)
+        {
             bool only0xFF = true, only0x00 = true;
             int i;
             string result = "";
@@ -532,7 +544,7 @@ namespace SMBIOS
             string[] type =
             {
                 "Other", /* 0x01 */
-		        "Unknown",
+                "Unknown",
                 "Mouse",
                 "Track Ball",
                 "Track Point",
@@ -551,7 +563,7 @@ namespace SMBIOS
             string[] interface0x00 =
             {
                 "Other", /* 0x01 */
-		        "Unknown",
+                "Unknown",
                 "Serial",
                 "PS/2",
                 "Infrared",
@@ -562,14 +574,14 @@ namespace SMBIOS
             string[] interface0xA0 =
             {
                 "Bus Mouse DB-9", /* 0xA0 */
-		        "Bus Mouse Micro DIN",
+                "Bus Mouse Micro DIN",
                 "USB" /* 0xA2 */
             };
             if (code >= 0x01 && code <= 0x08)
                 return interface0x00[code - 0x01];
-	        if (code >= 0xA0 && code <= 0xA2)
-		        return interface0xA0[code - 0xA0];
-	        return OUT_OF_SPEC;
+            if (code >= 0xA0 && code <= 0xA2)
+                return interface0xA0[code - 0xA0];
+            return OUT_OF_SPEC;
         }
 
         /*
@@ -580,7 +592,7 @@ namespace SMBIOS
             string[] type =
             {
                 "Other", /* 0x01 */
-		        "Unknown",
+                "Unknown",
                 "Video",
                 "SCSI Controller",
                 "Ethernet",
@@ -622,7 +634,7 @@ namespace SMBIOS
             string[] status =
             {
                 "Disabled", /* 0x00 */
-		        "Enabled",
+                "Enabled",
                 "Not Implemented",
                 "Unknown" /* 0x03 */
             };
