@@ -1,0 +1,4 @@
+﻿/SMBIOS/.vs/**
+/SMBIOS/bin/*/
+/SMBIOS/obj/*/
+/SMBIOS/bin/**/
